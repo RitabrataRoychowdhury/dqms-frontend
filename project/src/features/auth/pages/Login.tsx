@@ -12,26 +12,33 @@ const Login: React.FC = () => {
   const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    // Basic validation
-    if (!email || !password) {
-      setError('Please fill in all fields');
-      return;
-    }
-    
-    try {
-      setError('');
-      setLoading(true);
-      await login(email, password);
-      navigate('/profile');
-    } catch (err) {
-      setError('Failed to log in. Please check your credentials.');
-      console.error(err);
-    } finally {
-      setLoading(false);
-    }
-  };
+  e.preventDefault();
+
+  // Basic validation
+  if (!email || !password) {
+    setError('Please fill in all fields');
+    return;
+  }
+
+  try {
+    setError('');
+    setLoading(true);
+    console.log('Login form submitted with:', { email, password });
+
+    // Call the login method which logs internally and manages tokens
+    const response = await login(email, password);
+
+    console.log('Login successful:', response);
+
+    // Redirect after successful login
+    navigate('/profile');
+  } catch (err) {
+    setError('Failed to log in. Please check your credentials.');
+    console.error('Login error caught in handleSubmit:', err);
+  } finally {
+    setLoading(false);
+  }
+};
 
   return (
     <div className="flex flex-col items-center justify-center">
