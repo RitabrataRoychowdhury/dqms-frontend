@@ -1,10 +1,11 @@
 export interface User {
   id: string;
-  email: string;
   userName: string;
+  email: string;
   roles: string[];
-  [key: string]: any;
+  name?: string;
 }
+
 
 export interface RegisterDto {
   userName: string;
@@ -18,9 +19,11 @@ export interface RegisterDto {
 }
 
 export interface IAuthService {
-  login(email: string, password: string): Promise<any>;
-  register(user: RegisterDto): Promise<any>;
-  logout(refreshToken: string): Promise<void>;
-  getUserInfo(token: string): Promise<User>;
-  validateToken(token: string): Promise<boolean>;
+  login: (email: string, password: string) => Promise<any>;
+  loginWithSession: (email: string) => Promise<any>; // 👈 Add this line
+  register: (user: any) => Promise<any>;
+  logout: (refreshToken: string) => Promise<void>;
+  getUserInfo: (token: string) => Promise<any>;
+  validateToken: (token: string) => Promise<boolean>;
 }
+

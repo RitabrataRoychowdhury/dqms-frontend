@@ -31,7 +31,7 @@ const Login: React.FC = () => {
     console.log('Login successful:', response);
 
     // Redirect after successful login
-    navigate('/profile');
+    navigate('/Profile');
   } catch (err) {
     setError('Failed to log in. Please check your credentials.');
     console.error('Login error caught in handleSubmit:', err);

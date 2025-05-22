@@ -13,14 +13,14 @@ interface AuthContextType {
   user: User | null;
   isAuthenticated: boolean;
   isLoading: boolean;
-  login: (email: string, password: string) => Promise<void>;
+  login: (email: string, password?: string) => Promise<void>;
   logout: () => Promise<void>;
   hasRole: (role: string) => boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-export const useAuth = () => {
+export const useAuth = (): AuthContextType => {
   const context = useContext(AuthContext);
   if (!context) {
     throw new Error('useAuth must be used within an AuthProvider');
@@ -31,7 +31,6 @@ export const useAuth = () => {
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-
   const { authService } = useServices();
 
   useEffect(() => {
@@ -45,13 +44,18 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       try {
         const isValid = await authService.validateToken(token);
         if (isValid) {
-          const userInfo = JSON.parse(localStorage.getItem('userInfo') || '{}');
-          setUser(userInfo);
+          const storedUser = localStorage.getItem('userInfo');
+          if (storedUser) {
+            setUser(JSON.parse(storedUser));
+          }
         } else {
           localStorage.clear();
+          setUser(null);
         }
       } catch (error) {
-        console.error('Error validating token:', error);
+        console.error('Error during token validation:', error);
+        localStorage.clear();
+        setUser(null);
       } finally {
         setIsLoading(false);
       }
@@ -60,19 +64,31 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     checkAuth();
   }, [authService]);
 
-  const handleLogin = async (email: string, password: string) => {
+  const handleLogin = async (email: string, password?: string) => {
+    setIsLoading(true);
     try {
-      setIsLoading(true);
-      const data = await authService.login(email, password);
+      const response = password
+        ? await authService.login(email, password)
+        : await authService.loginWithSession(email);
 
-      localStorage.setItem('accessToken', data.accessToken);
-      localStorage.setItem('refreshToken', data.refreshToken);
-      localStorage.setItem('userInfo', JSON.stringify(data.user));
+      const userInfo: User = {
+        id: response.userId, // or response.id if that's how it comes back
+        userName: response.username, // map to userName
+        email: response.email,
+        name: response.name || response.username || '',
+        roles: response?.resource_access?.account?.roles || [],
+      };
 
-      setUser(data.user);
+
+      // Store tokens and user info
+      localStorage.setItem('accessToken', response.accessToken);
+      localStorage.setItem('refreshToken', response.refreshToken);
+      localStorage.setItem('userInfo', JSON.stringify(userInfo));
+
+      setUser(userInfo);
       toast.success('Login successful');
     } catch (error) {
-      toast.error('Login failed. Please check your credentials.');
+      toast.error('Login failed. Please check your credentials or try again.');
       throw error;
     } finally {
       setIsLoading(false);
@@ -80,8 +96,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   };
 
   const handleLogout = async () => {
+    setIsLoading(true);
     try {
-      setIsLoading(true);
       const refreshToken = localStorage.getItem('refreshToken');
       if (refreshToken) {
         await authService.logout(refreshToken);

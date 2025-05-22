@@ -6,6 +6,7 @@ import { routes } from './routes';
 import { authService } from '../features/auth/services/authService';
 import { realmService } from '../features/auth/services/realmService';
 import { roleService } from '../features/auth/services/roleService';
+import { ThemeProvider } from '../contexts/ThemeContext'; // ✅ Import your ThemeContext
 import 'react-toastify/dist/ReactToastify.css';
 
 function AppRoutes() {
@@ -15,14 +16,16 @@ function AppRoutes() {
 
 function App() {
   return (
-    <ServiceProvider services={{ authService, realmService, roleService }}>
-      <AuthProvider>
-        <BrowserRouter>
-          <ToastContainer position="top-right" autoClose={3000} />
-          <AppRoutes />
-        </BrowserRouter>
-      </AuthProvider>
-    </ServiceProvider>
+    <ThemeProvider> {/* ✅ Wrap the entire app */}
+      <ServiceProvider services={{ authService, realmService, roleService }}>
+        <AuthProvider>
+          <BrowserRouter>
+            <ToastContainer position="top-right" autoClose={3000} />
+            <AppRoutes />
+          </BrowserRouter>
+        </AuthProvider>
+      </ServiceProvider>
+    </ThemeProvider>
   );
 }
 
